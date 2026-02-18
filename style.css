@@ -86,3 +86,25 @@ button {
     gap: 10px;
     margin-top: 20px;
 }
+
+.code-box {
+    background: #1e1e1e;
+    color: #00ff88;
+    padding: 15px;
+    border-radius: 6px;
+    text-align: left;
+    width: 80%;
+    max-width: 800px;
+    margin: auto;
+    font-family: monospace;
+}
+
+.explanation-box {
+    background: #ffffff;
+    padding: 15px;
+    border-radius: 6px;
+    width: 80%;
+    max-width: 800px;
+    margin: auto;
+    border: 1px solid #ccc;
+}

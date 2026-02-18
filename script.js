@@ -2,7 +2,8 @@ let state = {
     mode: "single",
     arr: [],
     ptr1: 0,
-    ptr2: 0
+    ptr2: 0,
+    lastAction: ""
 };
 
 const baseAddress = 0x1000;
@@ -17,6 +18,7 @@ function loadArray() {
     state.arr = input.split(" ").map(Number);
     state.ptr1 = 0;
     state.ptr2 = state.arr.length - 1;
+    state.lastAction = "load";
 
     render();
 }
@@ -25,6 +27,7 @@ function loadArray() {
 
 function setMode(mode) {
     state.mode = mode;
+    state.lastAction = "modeChange";
     render();
 }
 
@@ -34,9 +37,10 @@ function render() {
     renderMemory();
     renderDetails();
     renderOperations();
+    updateEducationalPanels();
 }
 
-/* ================= MEMORY BLOCKS ================= */
+/* ================= MEMORY ================= */
 
 function renderMemory() {
     const memoryDiv = document.getElementById("memory");
@@ -53,7 +57,6 @@ function renderMemory() {
         const addr =
             "0x" + (baseAddress + index * sizeOfInt).toString(16);
 
-        // pointer visuals
         if (state.mode === "single" && index === state.ptr1) {
             block.classList.add("pointer1");
         }
@@ -161,11 +164,12 @@ function renderOperations() {
     }
 }
 
-/* ================= SINGLE MODE ================= */
+/* ================= POINTER OPS ================= */
 
 function movePtr1Forward() {
     if (state.ptr1 < state.arr.length - 1) {
         state.ptr1++;
+        state.lastAction = "moveForward";
         render();
     }
 }
@@ -173,21 +177,21 @@ function movePtr1Forward() {
 function movePtr1Backward() {
     if (state.ptr1 > 0) {
         state.ptr1--;
+        state.lastAction = "moveBackward";
         render();
     }
 }
 
 function jumpOffset() {
-    const offset = parseInt(prompt("Enter offset (positive or negative):"));
+    const offset = parseInt(prompt("Enter offset:"));
     if (isNaN(offset)) return;
 
     const newIndex = state.ptr1 + offset;
 
     if (newIndex >= 0 && newIndex < state.arr.length) {
         state.ptr1 = newIndex;
+        state.lastAction = "jump";
         render();
-    } else {
-        alert("Boundary violation prevented.");
     }
 }
 
@@ -195,15 +199,15 @@ function modifyValue() {
     const newVal = prompt("Enter new value:");
     if (newVal !== null && !isNaN(newVal)) {
         state.arr[state.ptr1] = Number(newVal);
+        state.lastAction = "modify";
         render();
     }
 }
 
-/* ================= DUAL MODE ================= */
-
 function movePtr2Forward() {
     if (state.ptr2 < state.arr.length - 1) {
         state.ptr2++;
+        state.lastAction = "ptr2Forward";
         render();
     }
 }
@@ -211,19 +215,76 @@ function movePtr2Forward() {
 function movePtr2Backward() {
     if (state.ptr2 > 0) {
         state.ptr2--;
+        state.lastAction = "ptr2Backward";
         render();
     }
 }
 
 function comparePointers() {
-    const diff = state.ptr2 - state.ptr1;
-    const byteDiff = diff * sizeOfInt;
+    state.lastAction = "compare";
+    render();
+}
 
-    alert(
-`Pointer 1 Index: ${state.ptr1}
-Pointer 2 Index: ${state.ptr2}
+/* ================= EDUCATIONAL ENGINE ================= */
+function updateEducationalPanels() {
+    const codePanel = document.getElementById("codePanel");
+    const explanationPanel = document.getElementById("explanationPanel");
 
-Element Difference: ${diff}
-Byte Difference: ${byteDiff} bytes`
-    );
+    let code = "";
+    let explanation = "";
+
+    switch (state.lastAction) {
+
+        case "moveForward":
+            code = `ptr1++;`;
+            explanation = `Pointer 1 moved forward by sizeof(int) = ${sizeOfInt} bytes.`;
+            break;
+
+        case "moveBackward":
+            code = `ptr1--;`;
+            explanation = `Pointer 1 moved backward by ${sizeOfInt} bytes.`;
+            break;
+
+        case "ptr2Forward":
+            code = `ptr2++;`;
+            explanation = `Pointer 2 moved forward by sizeof(int) = ${sizeOfInt} bytes.`;
+            break;
+
+        case "ptr2Backward":
+            code = `ptr2--;`;
+            explanation = `Pointer 2 moved backward by ${sizeOfInt} bytes.`;
+            break;
+
+        case "jump":
+            code = `ptr = ptr + offset;`;
+            explanation = `Pointer jumped by multiple positions with boundary validation.`;
+            break;
+
+        case "modify":
+            code = `*ptr = newValue;`;
+            explanation = `Dereferencing pointer to modify value at current memory location.`;
+            break;
+
+        case "compare":
+            code = `int diff = ptr2 - ptr1;`;
+            explanation = `Pointer subtraction returns element difference (not byte difference).`;
+            break;
+
+        case "modeChange":
+            code = `// Mode changed`;
+            explanation = `Pointer mode switched.`;
+            break;
+
+        case "load":
+            code = `int *ptr = arr;`;
+            explanation = `Pointer initialized to base address of array.`;
+            break;
+
+        default:
+            code = `int *ptr = arr;`;
+            explanation = `Pointer initialized to base address of array.`;
+    }
+
+    codePanel.textContent = code;
+    explanationPanel.textContent = explanation;
 }
